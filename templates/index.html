@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Phishing Detector</title>
+</head>
+<body>
+    <h1>Phishing Email Detector</h1>
+    <textarea id="content" rows="10" cols="50" placeholder="Paste email content here..."></textarea><br>
+    <button onclick="checkPhishing()">Check</button>
+    <p id="result"></p>
+
+
+
+<button onclick="sendFeedback(true)">Correct</button>
+<button onclick="sendFeedback(false)">Incorrect</button>
+
+<h3>Or upload an email file (.eml):</h3>
+<input type="file" id="emailFile" accept=".eml"><br>
+<button onclick="uploadEmail()">Upload & Analyze</button>
+
+    <script>
+        async function checkPhishing(){
+            const content = document.getElementById('content').value;
+            const response = await fetch('/detect', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({content: content})
+            });
+
+            const data = await response.json();
+            document.getElementById('result').innerText =
+                `Result: ${data.result} (Confidence: ${(data.probability*100).toFixed(2)}%)`;
+        }
+
+
+async function sendFeedback(isCorrect) {
+    const content = document.getElementById('content').value;
+    await fetch('/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, isCorrect })
+    });
+    alert("Feedback submitted. Thank you!");
+}
+
+
+
+async function uploadEmail() {
+    const fileInput = document.getElementById('emailFile');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please select a .eml file.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+    });
+
+    const data = await response.json();
+    document.getElementById('result').innerText =
+        `Result: ${data.result} (Confidence: ${(data.probability * 100).toFixed(2)}%)`;
+
+}
+
+
+
+
+
+    </script>
+
+
+<hr>
+<h2>Help & Explanations</h2>
+
+<details>
+  <summary><strong>1. What is the Email Text box for?</strong></summary>
+  <p>Paste the full text of an email or message that you want to analyze for phishing. This can be the body of a suspicious message or even something copied from your inbox.</p>
+</details>
+
+<details>
+  <summary><strong>2. What does the "Check" button do?</strong></summary>
+  <p>Clicking "Check" sends your message to the machine learning model. It will return whether the message is Phishing or Legitimate, along with a confidence percentage.</p>
+</details>
+
+<details>
+  <summary><strong>3. What are the "Correct" and "Incorrect" buttons?</strong></summary>
+  <p>
+    After viewing a prediction, use these buttons to provide feedback.
+    <ul>
+      <li><strong>Correct</strong> → The model got it right</li>
+      <li><strong>Incorrect</strong> → The model made a mistake</li>
+    </ul>
+    Your feedback helps improve the system over time by logging this data for future training.
+  </p>
+</details>
+
+<details>
+  <summary><strong>4. What does the confidence score mean?</strong></summary>
+  <p>The confidence score tells you how certain the model is about its decision. 100% means the model is extremely sure; scores near 50% mean it's uncertain.</p>
+</details>
+
+<details>
+  <summary><strong>5. Confidence Levels with Examples</strong></summary>
+  <p>The table below shows how to interpret confidence scores with example messages:</p>
+  <table border="1" cellpadding="6" style="border-collapse: collapse; margin-top: 10px;">
+    <thead>
+      <tr>
+        <th>Confidence Range</th>
+        <th>Meaning</th>
+        <th>Example Message</th>
+        <th>Likely Label</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>90–100%</td>
+        <td>Very confident</td>
+        <td>"Verify your bank account immediately or it will be closed."</td>
+        <td>Phishing (Fake)</td>
+      </tr>
+      <tr>
+        <td>90–100%</td>
+        <td>Very confident</td>
+        <td>"Let's meet tomorrow to discuss the Q3 budget."</td>
+        <td>Legitimate (Real)</td>
+      </tr>
+      <tr>
+        <td>70–89%</td>
+        <td>Fairly confident</td>
+        <td>"Update your Apple ID payment information to avoid service disruption."</td>
+        <td>Phishing (Fake)</td>
+      </tr>
+      <tr>
+        <td>70–89%</td>
+        <td>Fairly confident</td>
+        <td>"Please review the attached document before our call."</td>
+        <td>Legitimate (Real)</td>
+      </tr>
+      <tr>
+        <td>50–69%</td>
+        <td>Uncertain / borderline</td>
+        <td>"Your subscription has been paused. Click here to reactivate."</td>
+        <td>Possibly Phishing</td>
+      </tr>
+      <tr>
+        <td>50–69%</td>
+        <td>Uncertain / borderline</td>
+        <td>"FYI: Attached is the invoice from last month."</td>
+        <td>Possibly Legitimate</td>
+      </tr>
+      <tr>
+        <td>&lt; 50%</td>
+        <td>Low confidence / weak signal</td>
+        <td>"Thanks again for your help today."</td>
+        <td>Probably Legitimate</td>
+      </tr>
+    </tbody>
+  </table>
+</details>
+
+
+
+</body>
+</html>

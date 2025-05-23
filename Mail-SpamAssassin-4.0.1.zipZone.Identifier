@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://spamassassin.apache.org/
+HostUrl=https://downloads.apache.org/spamassassin/source/Mail-SpamAssassin-4.0.1.zip
